@@ -32,6 +32,14 @@ let rec to_string exp =
     | Until(l, r)    -> (print_paren l) ^ " U " ^ (print_paren r)
     | Release(l, r)  -> (print_paren l) ^ " R " ^ (print_paren r)
 
+(* Determine the size of an expression consistent with subformula ordering *)
+let rec size_of exp =
+  match exp with
+    | Top | Bottom | Atom(_) -> 1
+    | Not(exp) | Next(exp) | Finally(exp) | Globally(exp) -> 1 + size_of exp
+    | And(l, r) | Or(l, r) | Until(l, r) | Release(l, r) ->
+      1 + max (size_of l) (size_of r)
+
 module LtlSet = 
   struct
     module S_ = Set.Make(
@@ -47,6 +55,17 @@ module LtlSet =
     let to_string set =
       let exps = List.map to_string (elements set) in
       "{" ^ (String.concat ", " exps) ^ "}"
+	
+    (* Return a tuple containing the largest formula in the set and the remaining elements *)
+    let pop_largest set =
+      let (_, largest) = List.fold_left (fun (size, value) formula ->
+	let cur_size = size_of formula in
+	if size < cur_size then
+	  (cur_size, formula)
+	else
+	  (size, value)
+      ) (0, Bottom) (elements set) in
+      (largest, remove largest set)
 
 end
 
@@ -82,7 +101,6 @@ let rec nnf exp = match exp with
    (a R x) \/ (b R x) -> (a \/ b) R x
    (G a) /\ (G b)     -> G(a /\ b)
    (GF a) \/ (GF b)   -> GF (a \/ b)
-   not not p          -> p
 *)
 let rec simplify exp = match exp with
   | And(Next l, Next r) -> Next(And(simplify l, simplify r))
@@ -92,17 +110,49 @@ let rec simplify exp = match exp with
   | And(Globally l, Globally r) -> Globally(And(simplify l, simplify r))
   | Or(Globally(Finally l), Globally(Finally r)) -> 
     Globally(Finally(Or(simplify l, simplify r)))
-  | Not(Not(p)) -> simplify p
   | _ -> exp
 
 (* An expression is reduced if it is either a literal or has next as the outermost connective *)
 let is_reduced = function
-  | Top | Bottom | Atom(_) | Not(Prop(_)) | Next(_) -> true
+  | Top | Bottom | Atom(_) | Not(Atom(_)) | Next(_) -> true
   | _ -> false
+
+(* Conjunction concatenation of a ltl list *)
+let and_concat = function
+    | [] -> Top
+    | exps -> List.reduce (fun a b -> And(a, b)) exps
+
+(* Apply epsilon reduction rules on a formula set to produce valid transitions to more reduced sets *)
+let epsilon_transform set =
+  (* Single rule application, keeping track of !transitions *)
+  let apply_rule exp = match exp with
+    | And(l, r) -> [(LtlSet.of_list [l; r], None)]
+    | Or(l, r) -> [(LtlSet.singleton l, None);
+		   (LtlSet.singleton r, None)]
+    | Release(l, r) -> [(LtlSet.of_list [l ; r], None);
+			(LtlSet.of_list [r ; Next(exp)], None)]
+    | Globally(p) -> [(LtlSet.of_list [p; Next(exp)], None)]
+    | Until(l, r) -> [(LtlSet.singleton r, None);
+		      (LtlSet.of_list [l;Next(exp)], Some(exp))]
+    | Finally(p) -> [(LtlSet.singleton p, None);
+		     (LtlSet.singleton Next(exp), Some(exp))]
+    | _ -> failwith "reduced form given"
+  in
+  let (reduced, complex) = LtlSet.partition is_reduced set in
+  if LtlSet.is_empty complex then
+    None
+  else
+    let (exp, complex) = ltlSet.pop_largets complex in
+    let rest = FormulaSet.union reduced complex in
+    let transformed = apply_rule exp in (* Reduce the largest non-reduced formula *)
+    Some(List.map (fun (set, cond) -> (LtlSet.union set rest, cond)) transformed)
+    
+  
 
 (* Main function *)
 let () =
   let exp = Not(And(Atom "p", Finally(Or(Bottom, Next(Atom "q"))))) in
   let expSet = LtlSet.singleton exp in
-  let expSet = LtlSet.add (simplify (Not exp)) expSet in
-  print_string ((LtlSet.to_string expSet) ^ "\n")
+  let expSet = LtlSet.add (nnf (Not exp)) expSet in
+  let (largest, _) = LtlSet.pop_largest expSet in
+  print_string ((to_string largest) ^ "\n")
