@@ -32,6 +32,25 @@ let rec to_string exp =
     | Until(l, r)    -> (print_paren l) ^ " U " ^ (print_paren r)
     | Release(l, r)  -> (print_paren l) ^ " R " ^ (print_paren r)
 
+module LtlSet = 
+  struct
+    module S_ = Set.Make(
+      struct
+	type t = ltl
+	let compare = compare
+      end)
+    include S_
+
+    let compare a b = Pervasives.compare (elements a) (elements b)
+    let (=) a b     = compare a b = 0
+
+    let to_string set =
+      let exps = List.map to_string (elements set) in
+      "{" ^ (String.concat ", " exps) ^ "}"
+
+end
+
+
 (* Convert an expression into negative normal form. 
    Note that this does not increase the size of exp *)
 let rec nnf exp = match exp with
@@ -63,6 +82,7 @@ let rec nnf exp = match exp with
    (a R x) \/ (b R x) -> (a \/ b) R x
    (G a) /\ (G b)     -> G(a /\ b)
    (GF a) \/ (GF b)   -> GF (a \/ b)
+   not not p          -> p
 *)
 let rec simplify exp = match exp with
   | And(Next l, Next r) -> Next(And(simplify l, simplify r))
@@ -72,13 +92,17 @@ let rec simplify exp = match exp with
   | And(Globally l, Globally r) -> Globally(And(simplify l, simplify r))
   | Or(Globally(Finally l), Globally(Finally r)) -> 
     Globally(Finally(Or(simplify l, simplify r)))
+  | Not(Not(p)) -> simplify p
   | _ -> exp
 
-(* A set of formulae is reduced if all formulae are either literals or
-   formulae with outermost connective X *)
-
+(* An expression is reduced if it is either a literal or has next as the outermost connective *)
+let is_reduced = function
+  | Top | Bottom | Atom(_) | Not(Prop(_)) | Next(_) -> true
+  | _ -> false
 
 (* Main function *)
 let () =
   let exp = Not(And(Atom "p", Finally(Or(Bottom, Next(Atom "q"))))) in
-  print_string ((to_string exp) ^ "\n" ^ (to_string (nnf exp)) ^ "\n")
+  let expSet = LtlSet.singleton exp in
+  let expSet = LtlSet.add (simplify (Not exp)) expSet in
+  print_string ((LtlSet.to_string expSet) ^ "\n")
