@@ -49,6 +49,8 @@ module LtlSet =
       end)
     include S_
 
+    let of_list l = List.fold_left (fun s e -> add e s) empty l
+
     let compare a b = Pervasives.compare (elements a) (elements b)
     let (=) a b     = compare a b = 0
 
@@ -120,7 +122,7 @@ let is_reduced = function
 (* Conjunction concatenation of a ltl list *)
 let and_concat = function
     | [] -> Top
-    | exps -> List.reduce (fun a b -> And(a, b)) exps
+    | (e::exps) -> List.fold_left (fun a b -> And(a, b)) e exps
 
 (* Apply epsilon reduction rules on a formula set to produce valid transitions to more reduced sets *)
 let epsilon_transform set =
@@ -135,17 +137,29 @@ let epsilon_transform set =
     | Until(l, r) -> [(LtlSet.singleton r, None);
 		      (LtlSet.of_list [l;Next(exp)], Some(exp))]
     | Finally(p) -> [(LtlSet.singleton p, None);
-		     (LtlSet.singleton Next(exp), Some(exp))]
+		     (LtlSet.singleton (Next exp), Some(exp))]
     | _ -> failwith "reduced form given"
   in
   let (reduced, complex) = LtlSet.partition is_reduced set in
   if LtlSet.is_empty complex then
     None
   else
-    let (exp, complex) = ltlSet.pop_largets complex in
-    let rest = FormulaSet.union reduced complex in
+    let (exp, complex) = LtlSet.pop_largest complex in
+    let rest = LtlSet.union reduced complex in
     let transformed = apply_rule exp in (* Reduce the largest non-reduced formula *)
     Some(List.map (fun (set, cond) -> (LtlSet.union set rest, cond)) transformed)
+
+(* Calculate sigma transform condition and result set,
+   input should be reduced and consistent *)
+let sigma_transform set =
+  List.fold_left (fun (conds, next) -> function
+    | Top -> (conds, next)
+    | Bottom -> failwith "inconsistent Bottom"
+    | Atom(p) -> (Atom(p) :: conds, next)
+    | Not(Atom(p)) -> (Not(Atom(p)) :: conds, next)
+    | Next(x) -> (conds, LtlSet.add x next)
+    | other -> failwith ("not reduced " ^ to_string other))
+    ([], LtlSet.empty)(FormulaSet.elements set)
     
   
 
