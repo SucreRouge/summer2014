@@ -20,8 +20,8 @@ let main formula path =
   let out = file tmp in
   Graph.print_graph out g;
   close_out out;
-  Sys.command (Printf.sprintf "dot -Tpng -o %s %s" path tmp);
-  Sys.command (Printf.sprintf "rm %s" tmp);
+  let _ = Sys.command (Printf.sprintf "dot -Tpng -o %s %s" path tmp) in
+  let _ = Sys.command (Printf.sprintf "rm %s" tmp) in
   print_endline ("Graph output saved to " ^ path)
 		    
 
