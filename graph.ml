@@ -8,7 +8,7 @@ type node = {
   start : bool;
 }
 
-type edge {
+type edge = {
   label : string;
   s : node;
   t : node;
@@ -27,12 +27,24 @@ let new_graph title =
 let find_node {nodes = nodes} name =
   List.find (fun n -> n.name = name) nodes
 
-let add_node graph node =
+let add_node_internal graph node =
   try begin
     ignore (find_node graph node.name);
     graph
   end with
     | Not_found -> { graph with nodes = node :: graph.nodes }
+
+let add_final graph name =
+  add_node_internal graph { name = name; shape = DoubleCircle; start = false }
+
+let add_start graph name =
+  add_node_internal graph { name = name; shape = Circle; start = true }
+
+let add_start_final graph name =
+  add_node_internal graph { name = name; shape = DoubleCircle; start = true }
+
+let add_node graph name =
+  add_node_internal graph { name = name; shape = Circle; start = false }
 
 let link graph s_name t_name label =
   { graph with edges = 
@@ -45,7 +57,7 @@ open Printf
 
 let print_nodes out nodes =
   let print_node_list nodes =
-    if not (List.is_empty nodes) then
+    if not (nodes = []) then
       (List.iter (fun n -> fprintf out "\"%s\" " n.name) nodes;
        fprintf out ";\n")
   in
@@ -65,7 +77,7 @@ let print_edges out =
 
 let print_graph out { title = title; settings = settings; nodes = nodes; edges = edges } =
   fprintf out "digraph %s {\n" title;
-  List.iter (fprintf out "\t%s\n").settings;
+  List.iter (fprintf out "\t%s\n") settings;
   print_nodes out nodes;
   print_edges out edges;
   fprintf out "}\n"

@@ -42,14 +42,12 @@ let rec size_of exp =
 
 module LtlSet = 
   struct
-    module S_ = Set.Make(
+    module S_ = ExtendedSet.Make(
       struct
 	type t = ltl
 	let compare = compare
       end)
     include S_
-
-    let of_list l = List.fold_left (fun s e -> add e s) empty l
 
     let compare a b = Pervasives.compare (elements a) (elements b)
     let (=) a b     = compare a b = 0
@@ -162,3 +160,33 @@ let sigma_transform set =
     ([], LtlSet.empty)(LtlSet.elements set)
     
   
+let calculate_or prop1 prop2 =
+  let rec merge prop1 prop2 =
+    if prop1 = prop2 then
+      Some(prop1)
+    else if size_of prop1 > size_of prop2 then
+      merge prop2 prop1
+    else
+      match prop1 with
+	| Top -> Some(Top)
+	| Bottom -> Some(prop2)
+	| _ ->
+	  match prop2 with
+	    | Top -> Some(Top)
+	    | Bottom -> Some(prop1)
+	    | Atom(_) -> None
+	    | Not(_) -> None
+	    | And(l, r) -> begin
+	      match merge prop1 l with
+		| Some(result) -> Some(Or(result, r))
+		| None ->
+		  match merge prop1 r with
+		    | Some(result) -> Some(Or(l, result))
+		    | None -> None
+	    end
+	    | _ -> failwith "Not in propositional language"
+  in
+  match merge prop1 prop2 with
+    | Some(result) -> result
+    | None -> Or(prop1, prop2)
+

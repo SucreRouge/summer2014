@@ -21,7 +21,7 @@ module OrderedTransition = struct
     compare a b = 0
 end
 
-module TransitionSet = Set.Make(OrderedTransition)
+module TransitionSet = ExtendedSet.Make(OrderedTransition)
 
 (* Generalized Buchi Automaton *)
 type automaton = {
@@ -87,8 +87,13 @@ let to_graph automaton =
     Graph.link g s_string t_string (link_to_string link)
   ) g (TransitionSet.elements automaton.transitions)
 
+(* Inefficiently remove duplicates *)
+let rec unique = function
+  | [] -> []
+  | hd::tl -> hd :: (unique (List.filter (fun x -> x <> hd) tl))
+  
 let unique_postpones transitions =
-  List.unique (List.fold_left (fun postponed { link = link } ->
+  unique (List.fold_left (fun postponed { link = link } ->
     match link with
       | Epsilon(p) -> p @ postponed
       | _ -> postponed
@@ -109,18 +114,18 @@ let skip_epsilons automaton =
       match t.link with
 	| Epsilon(_) -> true | Sigma(_, _) -> false
     ) transitions in
-    if List.is_empty epsilons then
+    if (epsilons = []) then
       sigmas
     else
       let rest = List.tl epsilons @ sigmas in
       let target = List.hd epsilons in
-      if Ltl.FormulaSet.(target.s = target.t) then
+      if Ltl.LtlSet.(target.s = target.t) then
         skip rest
       else
         let replace rewrite_rule =
-          let (nexts, rest) = List.partition (fun t -> Ltl.FormulaSet.(t.s = target.t)) rest in
+          let (nexts, rest) = List.partition (fun t -> Ltl.LtlSet.(t.s = target.t)) rest in
           let transitions = List.fold_left (fun transitions n ->
-            if List.exists (fun t -> Ltl.FormulaSet.(t.t = n.s)) transitions then (* still referred *)
+            if List.exists (fun t -> Ltl.LtlSet.(t.t = n.s)) transitions then (* still referred *)
               (rewrite_rule n) :: n :: transitions
             else
               (rewrite_rule n) :: transitions
@@ -165,7 +170,7 @@ let merge_to_parallels transitions trans =
   match List.find_all (is_mergeable trans) transitions with
     | [] -> trans :: transitions
     | merge_to :: _ ->
-      merge_transitions trans merge_to :: BatList.remove_all transitions merge_to
+      merge_transitions trans merge_to :: List.filter (fun x -> x <> merge_to) transitions
 
 let join_sigmas automaton =
   let transitions = List.fold_left (fun transitions trans ->

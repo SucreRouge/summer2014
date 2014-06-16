@@ -1,0 +1,7 @@
+#! /bin/bash
+
+# Simple and hacky build script for ltl2ba
+
+# Build the ocaml program
+ocamlbuild main.native
+mv main.native ltl2ba
