@@ -7,6 +7,6 @@ Provides a basic tool for the translation of LTL expressions into Büchi Automat
 ## Usage
 ```sh
 $ ./build
-$ ltl2ba <ltl expression> <out file>.dot
-$ dot -Tpng -o <out file>.png <out file>.dot
+$ ltl2ba <ltl expression> <out file>
+$ eog <out file>
 ```
