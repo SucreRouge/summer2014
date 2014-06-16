@@ -78,9 +78,20 @@ let construct_from start_state =
 let to_graph automaton =
   let set_to_s = Ltl.LtlSet.to_string in
   let g = (Graph.new_graph "Automaton") in
-  let g = (Graph.add_final g "{}") in
   let is_start s = List.exists ((=) s) automaton.starts in
-  let add_node s = (if is_start s then Graph.add_start else Graph.add_node) in
+  (* Only accept infinite branches of the form not(aUb) <=> a'Rb' in nnf *)
+  let is_accepting s = List.for_all (fun e -> 
+    match e with
+      | Ltl.Release(_, _) -> true
+      | _ -> false
+  ) (Ltl.LtlSet.elements s) in
+  let add_node s = 
+    (if is_start s then
+	if is_accepting s then Graph.add_start_final
+	else Graph.add_start
+     else 
+	if is_accepting s then Graph.add_final
+	else Graph.add_node) in
   List.fold_left (fun g { link = link; s = s; t = t } ->
     let s_string = set_to_s s in
     let t_string = set_to_s t in
