@@ -87,3 +87,93 @@ let to_graph automaton =
     Graph.link g s_string t_string (link_to_string link)
   ) g (TransitionSet.elements automaton.transitions)
 
+let unique_postpones transitions =
+  List.unique (List.fold_left (fun postponed { link = link } ->
+    match link with
+      | Epsilon(p) -> p @ postponed
+      | _ -> postponed
+  ) [] transitions)
+
+let setup_sigma_postpones postpones =
+  List.map (fun trans ->
+    match trans.link with
+      | Sigma(c, p) -> { trans with link = Sigma(c, p @ postpones) }
+      | _ -> trans)
+
+let skip_epsilons automaton =
+  let transitions = TransitionSet.elements automaton.transitions in
+  let postpones = unique_postpones transitions in
+  let transitions = setup_sigma_postpones postpones transitions in
+  let rec skip transitions =
+    let (epsilons, sigmas) = List.partition (fun t ->
+      match t.link with
+	| Epsilon(_) -> true | Sigma(_, _) -> false
+    ) transitions in
+    if List.is_empty epsilons then
+      sigmas
+    else
+      let rest = List.tl epsilons @ sigmas in
+      let target = List.hd epsilons in
+      if Ltl.FormulaSet.(target.s = target.t) then
+        skip rest
+      else
+        let replace rewrite_rule =
+          let (nexts, rest) = List.partition (fun t -> Ltl.FormulaSet.(t.s = target.t)) rest in
+          let transitions = List.fold_left (fun transitions n ->
+            if List.exists (fun t -> Ltl.FormulaSet.(t.t = n.s)) transitions then (* still referred *)
+              (rewrite_rule n) :: n :: transitions
+            else
+              (rewrite_rule n) :: transitions
+          ) rest nexts in
+          skip transitions
+        in
+        match target.link with
+          | Epsilon([]) ->
+            replace (fun next -> { next with s = target.s })
+          | Epsilon(ps) ->
+            let new_link = function
+              | Epsilon(ps')  -> Epsilon(ps @ ps')
+              | Sigma(c, constraints) -> Sigma(c, List.find_all (fun p -> not (List.exists ((=) p) ps)) constraints)
+            in
+            replace (fun next -> { next with s = target.s; link = new_link next.link })
+          | _ -> failwith "unexpected non-epsilon value"
+  in
+  { automaton with transitions = TransitionSet.of_list (skip transitions) }
+
+let is_mergeable l r =
+  if l.s = r.s && l.t = r.t then
+    match (l.link, r.link) with
+      | (Epsilon(l_ps), Epsilon(r_ps))
+      | (Sigma(_, l_ps), Sigma(_, r_ps)) -> l_ps = r_ps
+      | _ -> false
+  else
+    false
+
+let merge_transitions l r =
+  let merged_link = match (l.link, r.link) with
+      | (Epsilon(_), Epsilon(_)) -> l.link
+      | (Sigma(l_cond, ps), Sigma(r_cond, _)) -> begin
+        match Ltl.calculate_or (Ltl.and_concat l_cond) (Ltl.and_concat r_cond) with
+          | Ltl.Top -> Sigma([], ps)
+          | prop -> Sigma([prop], ps)
+      end
+      | _ -> failwith (Printf.sprintf "Unable to merge %s with %s" (link_to_string l.link) (link_to_string r.link))
+  in
+  { l with link = merged_link }
+
+let merge_to_parallels transitions trans =
+  match List.find_all (is_mergeable trans) transitions with
+    | [] -> trans :: transitions
+    | merge_to :: _ ->
+      merge_transitions trans merge_to :: BatList.remove_all transitions merge_to
+
+let join_sigmas automaton =
+  let transitions = List.fold_left (fun transitions trans ->
+    merge_to_parallels transitions trans
+  ) [] (TransitionSet.elements automaton.transitions) in
+  { automaton with transitions = TransitionSet.of_list transitions }
+
+let construct_gba_from ltl_set =
+  join_sigmas
+    (skip_epsilons
+       (construct_from ltl_set))

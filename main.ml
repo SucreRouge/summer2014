@@ -5,7 +5,8 @@ let usage = "Usage: ltl2ba [LTL EXPRESSION] [OUTPUT FILE]\n" ^
 let help = "This is an unhelpful help message.\n"
 
 let main formula file =
-  print_string "Hello there\n"
+  let formula = (Parser.main Lexer.token (Lexing.from_string formula)) in
+  print_endline (Ltl.to_string formula)
 
 (* Main function, produces graph from string ltl input *)
 let () =
@@ -15,4 +16,3 @@ let () =
     else
       (* Run the main program on the input arguements *)
       main Sys.argv.(1) Sys.argv.(2)
-

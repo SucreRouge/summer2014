@@ -159,14 +159,6 @@ let sigma_transform set =
     | Not(Atom(p)) -> (Not(Atom(p)) :: conds, next)
     | Next(x) -> (conds, LtlSet.add x next)
     | other -> failwith ("not reduced " ^ to_string other))
-    ([], LtlSet.empty)(FormulaSet.elements set)
+    ([], LtlSet.empty)(LtlSet.elements set)
     
   
-
-(* Main function *)
-let () =
-  let exp = Not(And(Atom "p", Finally(Or(Bottom, Next(Atom "q"))))) in
-  let expSet = LtlSet.singleton exp in
-  let expSet = LtlSet.add (nnf (Not exp)) expSet in
-  let (largest, _) = LtlSet.pop_largest expSet in
-  print_string ((to_string largest) ^ "\n")
