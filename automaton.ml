@@ -38,7 +38,8 @@ let link_to_string link =
     | Epsilon(postpones) -> 
       "ε" ^ (String.concat "" (List.map (fun f -> ", !" ^ Ltl.to_string f) postpones))
     | Sigma(conds, postpones) -> 
-      "Σ" ^ (format_conds conds) ^ (String.concat "" (List.map (fun f -> ", " ^ (Ltl.to_string f)) postpones))
+      "Σ" ^ (format_conds conds) 
+(*^ (String.concat "" (List.map (fun f -> ", " ^ (Ltl.to_string f)) postpones)) *)
 
 let transition_to_string {link = link; s = s; t = t} =
   Printf.sprintf "%s -> %s (%s)" (Ltl.LtlSet.to_string s) (Ltl.LtlSet.to_string t) (link_to_string link)
@@ -77,6 +78,7 @@ let construct_from start_state =
 let to_graph automaton =
   let set_to_s = Ltl.LtlSet.to_string in
   let g = (Graph.new_graph "Automaton") in
+  let g = (Graph.add_final g "{}") in
   let is_start s = List.exists ((=) s) automaton.starts in
   let add_node s = (if is_start s then Graph.add_start else Graph.add_node) in
   List.fold_left (fun g { link = link; s = s; t = t } ->

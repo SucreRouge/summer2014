@@ -16,9 +16,12 @@ let main formula path =
   let a = Automaton.construct_gba_from formula_set in
   print_endline "Printing automaton to graph.";
   let g = Automaton.to_graph a in
-  let out = file path in
+  let tmp = (path ^ ".tmp") in
+  let out = file tmp in
   Graph.print_graph out g;
   close_out out;
+  Sys.command (Printf.sprintf "dot -Tpng -o %s %s" path tmp);
+  Sys.command (Printf.sprintf "rm %s" tmp);
   print_endline ("Graph output saved to " ^ path)
 		    
 
