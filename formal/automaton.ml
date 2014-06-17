@@ -20,13 +20,14 @@ module Make(Letter: LetterType) (State: StateType) =
 
     module Transition = struct
       type t = s * l * s
-      let compare (s, l, t) (s1, l1, t1) =
-	let c = State.compare s s1 in
-	if c <> 0 then c else
-	  let c = Letter.compare l l1 in
-	  if c <> 0 then c else
-	    State.compare t t1
+      let compare = Pervasives.compare
       let (=) a b = compare a b = 0
+      let to_string (start, letter, finish) =
+	Printf.sprintf "(%s --%s-> %s)"
+	  (State.to_string start)
+	  (Letter.to_string letter)
+	  (State.to_string finish)
+
     end
 
     module TSet = ExtendedSet.Make(Transition)
@@ -71,11 +72,12 @@ module Make(Letter: LetterType) (State: StateType) =
        transitions = transitions}
 
     let (=) a1 a2 =
-      a1.letters = a2.letters &&
-      a1.states = a2.states &&
-      a1.initial = a2.initial &&
-      a1.accepting = a2.accepting &&
-      a1.transitions = a2.transitions
+      (LSet.compare a1.letters a2.letters = 0) &&
+	(SSet.compare a1.states a2.states = 0) &&
+	(State.compare a1.initial a2.initial = 0) &&
+	(SSet.compare a1.states a2.states = 0) &&
+	(compare (TSet.elements a1.transitions) (TSet.elements a2.transitions) = 0) 
+
 
 	
 
@@ -87,11 +89,6 @@ module Make(Letter: LetterType) (State: StateType) =
 	
 
 
-    let transition_to_string (start, letter, finish) =
-      Printf.sprintf "(%s --%s-> %s)"
-	(State.to_string start)
-	(Letter.to_string letter)
-	(State.to_string finish)
       
 
     let to_string {letters = letters; states = states;
@@ -101,7 +98,7 @@ module Make(Letter: LetterType) (State: StateType) =
 	"Automaton over: " ^ (String.concat ", " (LSet.map_list Letter.to_string letters));
 	" + states: " ^ (String.concat ", " (SSet.map_list State.to_string states));
 	" + initial: " ^ State.to_string initial;
-	" + transitions: " ^ (String.concat ", " (TSet.map_list transition_to_string transitions));
+	" + transitions: " ^ (String.concat ", " (TSet.map_list Transition.to_string transitions));
 	" + accepting: " ^ (String.concat ", " (SSet.map_list State.to_string accepting))
       ] in
       String.concat "\n" result

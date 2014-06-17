@@ -28,7 +28,7 @@ let from_functions_tests = [
   (["a";"b"], 0, (* Blinking *)
    (function _ -> false),
    (function (0,_) -> [1] | _ -> [0]),
-   (A.from_states ["a";"b"] [0;1] 0 [] [(0,"a",1);(1,"a",0);(0,"b",0);(1,"b",0)]));
+   (A.from_states ["a";"b"] [0;1] 0 [] [(0,"a",1);(1,"a",0);(0,"b",1);(1,"b",0)]));
   (["a";"b"], 0, (* Consecuative bs *)
    (function 3 -> true | _ -> false),
    (function (3,"b") -> [3] | (x,"b") -> [x+1] | (_,_) -> [0]),
@@ -39,8 +39,6 @@ let from_functions_tests = [
 let from_functions_test =
   List.for_all (fun (letters,initial,final,move,check) -> 
     let result = A.from_functions letters initial final move in
-    print_endline (A.to_string result);
-    print_endline (A.to_string check);
     A.(=) result check
   ) from_functions_tests
 

@@ -1,16 +1,7 @@
-(* Testing under construction files *)
+(* file test_.ml *)
+(* Complete test suite for folder *)
 
-module SInt =
-  struct
-    type t = int
-    let to_string = string_of_int
-  end
+let test =
+  Test_automaton.test
 
-module IntAutomaton = Automaton.Make (SInt) (SInt)
-
-let () =
-  let a = (IntAutomaton.from_functions [5] 5
-	     (fun s -> false) 
-	     (fun s l -> [5])) in
-  print_endline (IntAutomaton.to_string a)
-    
+let () = print_endline (string_of_bool test)
