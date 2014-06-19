@@ -65,7 +65,8 @@ module Make(Letter: LetterType) (State: StateType) =
 
 
       in
-      let (states, transitions) = explore (SSet.singleton initial) SSet.empty TSet.empty in
+      let (states, transitions) = 
+	explore (SSet.singleton initial) SSet.empty TSet.empty in
       let accepting = SSet.filter final states in
       {letters = letters; states = states;
        initial = initial; accepting = accepting;
@@ -75,22 +76,67 @@ module Make(Letter: LetterType) (State: StateType) =
       (LSet.compare a1.letters a2.letters = 0) &&
 	(SSet.compare a1.states a2.states = 0) &&
 	(State.compare a1.initial a2.initial = 0) &&
-	(SSet.compare a1.states a2.states = 0) &&
+	(SSet.compare a1.accepting a2.accepting = 0) &&
 	(compare (TSet.elements a1.transitions) (TSet.elements a2.transitions) = 0) 
 
 
 	
 
-    (* Check if this automata accepts any infinite words *)
-    let is_empty {letters = letters; states = states;
-		   initial = initial; accepting = accepting;
-		   transitions = transitions} =
-      false
-	
+    (* Check if this automata accepts any infinite words, returns None if empty*)
+    let infinite_word a =
+      (* First perform a depth first search from the start node looking for a final node *)
+      let get_transitions node = (* Get the transitions from a node *)
+	TSet.elements (TSet.filter (fun (x,_,_) -> State.compare node x == 0)
+	  a.transitions) in
 
+      (* find a path from cur to a state matching pred *)
+      let rec reachable unvis goal vis path =
+	match unvis with
+	  | [] -> None (* We looked everywhere *)
+	  | (_,act,st)::tl ->
+	    if SSet.mem st vis then None else
+	      let vis = SSet.add st vis in
+	      let newpath = act::path in
+	      if State.compare st goal == 0 then Some(List.rev newpath) else
+		match reachable (get_transitions st) goal vis newpath with
+		  | Some(path) -> Some(path) (* Goal down this branch *)
+		  | None -> (* Look sideways *)
+		    reachable tl goal vis newpath in
+
+      let rec find_word unvis vis path =
+	match unvis with
+	  | [] -> None (* We looked everywhere *)
+	  | (_,act,st)::tl ->
+	    if SSet.mem st vis then None else
+	      let vis = SSet.add st vis in
+	      let newpath = act::path in
+	      if SSet.mem st a.accepting then
+	      (* Its possible, we have to check for a cylce *)
+		match reachable (get_transitions st) st SSet.empty [] with
+		  | Some(loop) -> Some(path, loop)
+		  | None -> begin (* keep looking down *)
+		    match find_word (get_transitions st) vis newpath with
+		      | Some(path, loop) -> Some(path, loop)
+		      | None -> (* look sideways *)
+			find_word tl vis newpath
+		  end
+	      else (* Keep looking *)
+		match find_word (get_transitions st) vis newpath with
+		  | Some(path, loop) -> Some(path, loop)
+		  | None -> (* look sideways *)
+		    find_word tl vis newpath in
+      find_word (get_transitions a.initial) SSet.empty []
+
+    let word_to_string (path, loop) =
+      let path = String.concat "" (List.map Letter.to_string path) in
+      let loop = String.concat "" (List.map Letter.to_string loop) in
+      path ^ "(" ^ loop ^ ")"
+
+    let is_empty automaton = match infinite_word automaton with
+      | None -> true
+      | Some(_) -> false
 
       
-
     let to_string {letters = letters; states = states;
 		   initial = initial; accepting = accepting;
 		   transitions = transitions} =
