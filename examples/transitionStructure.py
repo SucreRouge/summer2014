@@ -50,22 +50,24 @@ class TransitionStructure(dict):
                 edge = pydot.Edge(start, dest, label=label)
                 graph.add_edge(edge)
 
-        #Return the graph for testing purposes
-
-        
         #Display the graph to the screen
         png_str = graph.create_png(prog='dot')
         data = StringIO.StringIO(png_str)
         img = Image.open(data)
         img.show()
 
-        return graph
-
-
-def main():
-    ts = TransitionStructure()
-    ts.addAction(0, 'a', {1: 1})
-    ts.display()
 
 if __name__ == "__main__":
-    main()
+    ts_sto_graph = TransitionStructure({
+        (0,'a',1): 1,
+        (1,'a',2): .8, (1,'a',1): .2,
+        (2,'a',2): .3, (2,'a',3): .5, (2,'a',4): .2,
+        (3,'a',1): .7, (3,'a',2): .3, (3,'b',5): .8, (3,'b',3): .2,
+        (3,'c',3): 1,
+        (4,'a',5): .8, (4,'a',6): .2,
+        (5,'a',4): .1, (5,'a',3): .9,
+        (5,'b',4): 1,
+        (6,'a',4): .6, (6,'a',6): .4})
+
+    ts_sto_graph.display()
+
