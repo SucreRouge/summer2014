@@ -51,14 +51,16 @@ class TransitionStructure(dict):
                 graph.add_edge(edge)
 
         #Return the graph for testing purposes
-        return graph
+
         
         #Display the graph to the screen
         png_str = graph.create_png(prog='dot')
         data = StringIO.StringIO(png_str)
         img = Image.open(data)
         img.show()
-        
+
+        return graph
+
 
 def main():
     ts = TransitionStructure()
