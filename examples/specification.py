@@ -10,7 +10,7 @@ class Specification:
 
 class Lexicographic(Specification):
     #Impose lexicographic ordering on a bunch of specs
-    def __init__(self, specs*):
+    def __init__(self, *specs):
         self.specs = specs
     def worth(self, vec):
         return tuple(spec.worth(vec) for spec in self.specs)
@@ -20,14 +20,14 @@ class ID(Specification):
     def __init__(self, k):
         self.k = k
     def worth(self, vec):
-        return vec[k]
+        return vec[self.k]
 
 class Number(Specification):
     #Constant
     def __init__(self, n):
         self.n = n
     def worth(self, vec):
-        return n
+        return self.n
 
 class Negate(Specification):
     #Negate the value
@@ -71,3 +71,4 @@ class Gt(Binop):
             lw = self.left.worth(vec)
             rw = self.right.worth(vec)
             return -abs(lw - rw)/math.sqrt(2) - .1
+            

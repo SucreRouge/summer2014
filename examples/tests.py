@@ -1,5 +1,8 @@
 import unittest
+import random
+import math
 from transitionStructure import *
+from specification import *
 
 class TransitionStructureTests(unittest.TestCase):
     def testConstructor_Functionality(self):
@@ -112,7 +115,46 @@ class TransitionStructureTests(unittest.TestCase):
         self.assertEqual(self.ts_det_graph.getActions(4), {'a','b'})
         self.assertEqual(self.ts_sto_graph.getActions(3), {'a','b','c'})
 
-                         
+
+class SpecificationTests(unittest.TestCase):
+    def testNumber(self):
+        for n in random.sample(range(100), 20):
+            self.assertEqual(Number(n).worth(0), n)
+    def testID(self):
+        vec = (1,8,-5,3,2,-18,6,7,19)
+        for k in range(len(vec)):
+            self.assertEqual(ID(k).worth(vec), vec[k])
+    def testNegate(self):
+        vec = (0,0)
+        for i in range(-10,30):
+            self.assertEqual(Negate(Number(i)).worth(vec), -i)
+        self.assertEqual(Negate(Number(math.pi)).worth(vec), -math.pi)
+        self.assertEqual(Negate(Number(math.sqrt(2))).worth(vec), -math.sqrt(2))
+    def testAdd(self):
+        vec = (0,-1,.73,29,-81)
+        for k in range(len(vec)):
+            self.assertEqual(Add(ID(k), ID(k)).worth(vec), vec[k] + vec[k])
+        for n in random.sample(range(100), 20):
+            self.assertEqual(Add(Number(n),Number(0)).worth(vec), n)
+    def testMult(self):
+        vec = (0,-1,.73,29,-81)
+        for k in range(len(vec)):
+            self.assertEqual(Mult(ID(k), ID(k)).worth(vec), vec[k] * vec[k])
+        for n in random.sample(range(100), 20):
+            self.assertEqual(Mult(Number(n),Number(1)).worth(vec), n)
+    def testGte(self):
+        vec = (0, 0)
+        self.assertEqual(Gte(Number(0),Number(0)).worth(vec), 0)
+        self.assertEqual(Gte(Number(10),Number(8)).worth(vec), 0)
+        self.assertAlmostEqual(Gte(Number(-2),Number(0)).worth(vec), -math.sqrt(2))
+    def testGt(self):
+        vec = (0, 0)
+        self.assertEqual(Gt(Number(0),Number(0)).worth(vec), -.1)
+        self.assertEqual(Gt(Number(10),Number(8)).worth(vec), 0)
+        self.assertEqual(Gt(Number(10.00001),Number(10)).worth(vec), 0)
+        self.assertAlmostEqual(Gt(Number(-2),Number(0)).worth(vec), -math.sqrt(2)-.1)
+
+    
 
 if __name__ == '__main__':
     unittest.main()
