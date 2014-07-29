@@ -194,7 +194,7 @@ class ValueIteratorTests(unittest.TestCase):
         self.assertEqual(union([{0},{0},{0}]), {0})
         self.assertEqual(union([{0},{1},{0,1},{0}]), {0,1})
         self.assertEqual(union([{'a','b'},{'a'},{'c'}]),{'a','b','c'})
-    def testConstructor(self):
+    def testConstructorBasic(self):
         ts0 = TransitionStructure({(0, 'a', 1): 1})
         rfs0 = combineReward(lambda st: st)
         worth0 = ID(0).worth
@@ -207,6 +207,53 @@ class ValueIteratorTests(unittest.TestCase):
         self.assertEqual(dict(vi1.Q), {(0,'a'): {(vi1.gamma,)},
                                        (1,'a'): {(1,)},
                                        (2,'a'): {(0,)}})
+        ts2 = TransitionStructure(
+            {(0,'a',1): 1, (0,'b',2): 1,
+             (1,'a',-1): 1, (2,'a',-1): 1,
+             (-1,'a',-1): 1}) #-1 is terminal state
+        rfs2 = combineReward(
+            lambda st: 1 if st == 2 else 0,
+            lambda st: 1 if st == 2 or st == 1 else 0)
+        worth2 = Gt(ID(0), ID(1)).worth
+        vi2 = ValueIterator(ts2, rfs2, worth2)
+        self.assertEqual(dict(vi2.Q), {(0,'a'): {(0,vi2.gamma)},
+                                       (0,'b'): {(vi2.gamma,vi2.gamma)},
+                                       (1,'a'): {(0,1)}, (2,'a'): {(1,1)},
+                                       (-1,'a'): {(0,0)}})
+
+    def testConstructorWorth(self):
+        ts0 = TransitionStructure(
+            {(0,'a',1): 1,
+             (1,'a',2): 1, (1,'b',3): 1,
+             (2,'a',-1): 1, (3,'a',-1): 1,
+             (-1,'a',-1): 1}) #-1 is terminal state
+        rfs0 = combineReward(
+            lambda st: 1 if st == 3 else 0,
+            lambda st: 1 if st == 2 or st == 3 else 0)
+        worth0 = Gt(ID(1), ID(0)).worth
+        worth1 = Gte(ID(1), ID(0)).worth
+        worth2 = Add(Gte(ID(0), ID(1)), Gte(ID(1), ID(0))).worth
+        vi0 = ValueIterator(ts0, rfs0, worth0)
+        vi1 = ValueIterator(ts0, rfs0, worth1)
+        vi2 = ValueIterator(ts0, rfs0, worth2)
+        gam = vi0.gamma #brevity
+        self.assertEqual(dict(vi0.Q), 
+                         {(-1,'a'): {(0,0)}, 
+                          (3, 'a'): {(1,1)},     (2, 'a'): {(0,1)},
+                          (1, 'b'): {(gam,gam)}, (1, 'a'): {(0, gam)},
+                          (0, 'a'): {(0, gam**2)}}) #the interesting bit
+        self.assertEqual(dict(vi1.Q), 
+                         {(-1,'a'): {(0,0)}, 
+                          (3, 'a'): {(1,1)},     (2, 'a'): {(0,1)},
+                          (1, 'b'): {(gam,gam)}, (1, 'a'): {(0, gam)},
+                          (0, 'a'): {(0, gam**2), (gam**2, gam**2)}}) 
+        self.assertEqual(dict(vi2.Q), 
+                         {(-1,'a'): {(0,0)}, 
+                          (3, 'a'): {(1,1)},     (2, 'a'): {(0,1)},
+                          (1, 'b'): {(gam,gam)}, (1, 'a'): {(0, gam)},
+                          (0, 'a'): {(gam**2, gam**2)}})
+                                       
+        
     
 
 if __name__ == '__main__':

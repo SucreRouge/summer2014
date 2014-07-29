@@ -1,6 +1,7 @@
 import pydot
 from PIL import Image
 import StringIO
+
 from collections import defaultdict
 
 #Transition structure representation of the world
@@ -54,7 +55,7 @@ class TransitionStructure(defaultdict):
                 graph.add_edge(edge)
 
         #Display the graph to the screen
-        png_str = graph.create_png(prog='dot')
+        png_str = graph.create_png(prog='neato')
         data = StringIO.StringIO(png_str)
         img = Image.open(data)
         img.show()

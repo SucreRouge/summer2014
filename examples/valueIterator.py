@@ -1,4 +1,8 @@
 #file: valueIterator.py
+import pydot
+from PIL import Image
+import StringIO
+import copy
 
 from collections import defaultdict
 
@@ -15,7 +19,7 @@ def setAdd(setx, sety):
 def setSum(sets):
     # sets: a list of sets
     if not sets:
-        return {} #Nullary sum
+        return set([]) #Nullary sum
     else:
         current = sets[0]
         for x in sets[1:]:
@@ -40,7 +44,7 @@ def union(sets):
 class ValueIterator:
     
     runs = 100 #Number of iterations to use
-    gamma = 1
+    gamma = .9
     
     #Run value iteration on a transition structure
     def __init__(self, ts, rfs, worth):
@@ -56,9 +60,11 @@ class ValueIterator:
         self.Q = defaultdict(lambda: {(0,) * self.ids})
 
         for run in range(self.runs):
+            self.Qnext = copy.deepcopy(self.Q)
             for st in ts.getStates():
                 for act in ts.getActions(st):
                     self.update(st,act)
+            self.Q = self.Qnext
 
     #Update Q[st, act] using value iteration                
     def update(self, st, act):
@@ -67,7 +73,13 @@ class ValueIterator:
                              self.max(union(self.Q[(sp,ap)] 
                                             for ap in self.ts.getActions(sp))))
                       for sp in self.ts.getStates()])
-        self.Q[(st, act)] = setAdd({self.rfs(st)}, setMult(self.gamma, fut))
+        
+
+        self.Qnext[(st, act)] = setAdd({self.rfs(st)}, setMult(self.gamma, fut))
+        if act == 'sit':
+            print 'sit', self.Qnext[(st, act)]
+            print 'b', self.Qnext[(st, 'b')]
+
 
     #Find the max of a set of values using the new ordering
     #Returns the set of maximal elements
@@ -79,12 +91,33 @@ class ValueIterator:
             elif all(self.worth(val) > self.worth(elem) for elem in best):
                 best = {val} #Better than previous guess
         return best
+        
+    #Return the set of maximal actions from a state
+    def policy(self, st):
+        best = self.max(union(self.Q[(st, act)] # the maximal values
+                              for act in self.ts.getActions(st)))
+        #Inefficiently find the corresponding actions
+        return {act for act in self.ts.getActions(st)
+                if self.Q[(st, act)] & best}
 
         
     #Display the resulting policy on the transition structure
     def displayPolicy(self):
-        pass
-
+        graph = pydot.Dot(graph_type='digraph')
+        for (start, action, dest), prob in self.ts.items():
+            if prob: #Only display transitions with prob > 0
+                if prob < 1:
+                    label = "%0.1f%s" % (prob, str(action))
+                else:
+                    label = str(action)
+                color = "purple" if action in self.policy(start) else "black"
+                edge = pydot.Edge(start, dest, label=label, color=color)
+                graph.add_edge(edge)
+        #Display the graph to the screen
+        png_str = graph.create_png(prog='neato')
+        data = StringIO.StringIO(png_str)
+        img = Image.open(data)
+        img.show()
 
 if __name__ == '__main__':
     pass
