@@ -118,6 +118,14 @@ class TransitionStructureTests(unittest.TestCase):
 
 
 class SpecificationTests(unittest.TestCase):
+    def testCombineReward(self):
+        rf1 = lambda x: 3
+        rf2 = lambda x: x
+        rf3 = lambda x: x*x
+        rf4 = lambda x: x + 2
+        self.assertEqual(combineReward(rf1, rf2, rf3, rf4)(0), (3, 0, 0, 2))
+        self.assertEqual(combineReward(rf2, rf3, rf1, rf4)(2), (2, 4, 3, 4))
+        self.assertEqual(combineReward(rf1)(5), (3,))
     def testNumber(self):
         for n in random.sample(range(100), 20):
             self.assertEqual(Number(n).worth(0), n)
@@ -162,16 +170,29 @@ class ValueIteratorTests(unittest.TestCase):
                          {'hello','how','hope'})
         self.assertEqual(setAdd({5,.6,32,-27.5},{0}), {5,.6,32,-27.5})
     def testSetSum(self):
-        self.assertEqual(setSum({0},{1}), {1})
-        self.assertEqual(setSum({x} for x in range(10)), {45})
-        self.assertEqual(setSum(set(range(2)) for x in range(5)), 
+        self.assertEqual(setSum([{0},{1}]), {1})
+        self.assertEqual(setSum([{x} for x in range(10)]), {45})
+        self.assertEqual(setSum([set(range(2)) for x in range(5)]), 
                          set(range(6)))
     def testVecMult(self):
         self.assertEqual(vecMult(3,(1,2,3)), (3,6,9))
         self.assertEqual(vecMult(-.5,(4,3,2)), (-2,-1.5,-1))
         self.assertEqual(vecMult(0,(math.pi, 6.8123,-27)), (0,0,0))
-        
-    
+    def testSetMult(self):
+        self.assertEqual(setMult(3,{(0,),(1,),(2,)}),{(0,),(3,),(6,)})
+        self.assertEqual(setMult(0,{(0,1,2),(0,0,0),(5,9,-3.14)}),{(0,0,0)})
+        self.assertEqual(setMult(-2,{(5,3,1),(0,0,4),(.5,1,6)}),
+                         {(-10,-6,-2),(0,0,-8),(-1,-2,-12)})
+    def testUnion(self):
+        self.assertEqual(union([]), set([]))
+        self.assertEqual(union([{0},{0},{0}]), {0})
+        self.assertEqual(union([{0},{1},{0,1},{0}]), {0,1})
+        self.assertEqual(union([{'a','b'},{'a'},{'c'}]),{'a','b','c'})
+    def testConstructor(self):
+        ts1 = TransitionStructure({(0, 'a', 1): 1})
+        rfs1 = combineReward(lambda st: st)
+        worth1 = ID(0).worth
+        vi1 = ValueIterator(ts1, rfs1, worth1)
         
     
 

@@ -7,7 +7,7 @@ def setAdd(setx, sety):
     return {x + y for x in setx for y in sety}
 
 #Sum a list of sets in the way above
-def setSum(*sets):
+def setSum(sets):
     # sets: a list of sets
     if not sets:
         return {} #Nullary sum
@@ -15,7 +15,7 @@ def setSum(*sets):
         current = sets[0]
         for x in sets[1:]:
             current = setAdd(current, x)
-        return set(current)
+        return current
 
 #Multiply a tuple by a scalar as if it were a vector
 def vecMult(scalar, tup):
@@ -24,6 +24,13 @@ def vecMult(scalar, tup):
 #Multiply the contents of a set by a scalar
 def setMult(scalar, setx):
     return {vecMult(scalar,x) for x in setx}
+
+#Union a list of sets
+def union(sets):
+    current = set([])
+    for x in sets:
+        current = current | x
+    return current
 
 class ValueIterator:
     
@@ -37,13 +44,13 @@ class ValueIterator:
         #worth : tuple of reward values -> tuple in ordering
         self.ts = ts
         self.rfs = rfs
-        self.ids = len(rfs) #how many identifiers do we have
+        self.ids = len(rfs(0)) #how many identifiers do we have
         self.worth = worth #evaluate the worth of a tuple
         
         #Q : dict<(state, action), (val, val, ...)>
-        self.Q = defaultdict(lambda: (0,) * self.ids)
+        self.Q = defaultdict(lambda: {(0,) * self.ids})
 
-        for run in range(runs):
+        for run in range(self.runs):
             for st in ts.getStates():
                 for act in ts.getActions(st):
                     self.update(st,act)
@@ -51,11 +58,11 @@ class ValueIterator:
     #Update Q[st, act] using value iteration                
     def update(self, st, act):
         #Calculate future reward estimate
-        fut = setSum(setMult(self.ts[(s,a,sp)], 
-                             self.max(Q[(sp,ap)] 
-                                      for ap in self.ts.getActions(sp)))
-                     for sp in self.ts.getStates())
-        Q[(st, act)] = setAdd({self.rfs(st)}, setMult(gamma, fut))
+        fut = setSum([setMult(self.ts[(st,act,sp)], 
+                             self.max(union(self.Q[(sp,ap)] 
+                                            for ap in self.ts.getActions(sp))))
+                      for sp in self.ts.getStates()])
+        self.Q[(st, act)] = setAdd({self.rfs(st)}, setMult(self.gamma, fut))
 
     #Find the max of a set of values using the new ordering
     #Returns the set of maximal elements

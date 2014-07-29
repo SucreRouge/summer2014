@@ -1,6 +1,10 @@
 #file: specification.py
 import math
 
+#Make a vector valued RF from a list of scalar valued RFs
+def combineReward(*rfs):
+    return lambda st: tuple(rf(st) for rf in rfs)
+
 class Specification:
     def __init__(self):
         pass

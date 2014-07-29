@@ -1,9 +1,10 @@
 import pydot
 from PIL import Image
 import StringIO
+from collections import defaultdict
 
 #Transition structure representation of the world
-class TransitionStructure(dict):
+class TransitionStructure(defaultdict):
     def __init__(self, data=dict()):
         #data : dict<(state, action, state), prob>
         for key in data: # Make sure we got the kind of data we want
@@ -14,7 +15,9 @@ class TransitionStructure(dict):
                         if st == state and act == action]) == 1
 
         #Valid data, so keep track of it
-        super(TransitionStructure, self).__init__(data)
+        super(TransitionStructure, self).__init__(lambda: 0)
+        for key, val in data.iteritems():
+            self[key] = val
         
     #Add a transition to the structure
     def addAction(self, state, action, results):
