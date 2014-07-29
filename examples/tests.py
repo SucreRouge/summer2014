@@ -164,16 +164,22 @@ class SpecificationTests(unittest.TestCase):
         self.assertAlmostEqual(Gt(Number(-2),Number(0)).worth(vec), -math.sqrt(2)-.1)
 
 class ValueIteratorTests(unittest.TestCase):
+    def testVecAdd(self):
+        self.assertEqual(vecAdd((0,),(1,)), (1,))
+        self.assertEqual(vecAdd((0,1),(1,0)), (1,1))
+        self.assertEqual(vecAdd((-math.pi, 1),(math.pi, -1)), (0,0))
     def testSetAdd(self):
-        self.assertEqual(setAdd({1,2,3},{1,2,3}), {2,3,4,5,6})
-        self.assertEqual(setAdd({'h'}, {'ello','ow','ope'}), 
-                         {'hello','how','hope'})
-        self.assertEqual(setAdd({5,.6,32,-27.5},{0}), {5,.6,32,-27.5})
+        self.assertEqual(setAdd({(1,),(2,),(3,)},{(1,),(2,),(3,)}), 
+                         {(2,),(3,),(4,),(5,),(6,)})
+        self.assertEqual(setAdd({('h',)}, {('ello',),('ow',),('ope',)}), 
+                         {('hello',),('how',),('hope',)})
+        self.assertEqual(setAdd({(5,),(.6,),(32,),(-27.5,)},{(0,)}), 
+                         {(5,),(.6,),(32,),(-27.5,)})
     def testSetSum(self):
-        self.assertEqual(setSum([{0},{1}]), {1})
-        self.assertEqual(setSum([{x} for x in range(10)]), {45})
-        self.assertEqual(setSum([set(range(2)) for x in range(5)]), 
-                         set(range(6)))
+        self.assertEqual(setSum([{(0,)},{(1,)}]), {(1,)})
+        self.assertEqual(setSum([{(x,)} for x in range(10)]), {(45,)})
+        self.assertEqual(setSum([{(0,),(1,)} for x in range(5)]), 
+                         set((x,) for x in range(6)))
     def testVecMult(self):
         self.assertEqual(vecMult(3,(1,2,3)), (3,6,9))
         self.assertEqual(vecMult(-.5,(4,3,2)), (-2,-1.5,-1))
@@ -189,11 +195,18 @@ class ValueIteratorTests(unittest.TestCase):
         self.assertEqual(union([{0},{1},{0,1},{0}]), {0,1})
         self.assertEqual(union([{'a','b'},{'a'},{'c'}]),{'a','b','c'})
     def testConstructor(self):
-        ts1 = TransitionStructure({(0, 'a', 1): 1})
-        rfs1 = combineReward(lambda st: st)
-        worth1 = ID(0).worth
-        vi1 = ValueIterator(ts1, rfs1, worth1)
-        
+        ts0 = TransitionStructure({(0, 'a', 1): 1})
+        rfs0 = combineReward(lambda st: st)
+        worth0 = ID(0).worth
+        vi0 = ValueIterator(ts0, rfs0, worth0)
+        #(maxing over an empty set)
+        self.assertEqual(dict(vi0.Q), {(0,'a'): set([])})
+        ts1 = TransitionStructure({(0, 'a', 1): 1, (1,'a',2): 1, (2,'a',2): 1})
+        rfs1 = lambda st: (1,) if st == 1 else (0,)
+        vi1 = ValueIterator(ts1, rfs1, worth0)
+        self.assertEqual(dict(vi1.Q), {(0,'a'): {(vi1.gamma,)},
+                                       (1,'a'): {(1,)},
+                                       (2,'a'): {(0,)}})
     
 
 if __name__ == '__main__':

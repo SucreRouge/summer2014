@@ -2,9 +2,14 @@
 
 from collections import defaultdict
 
+#Add tuples as if they were vectors
+#warning: if tuples have different lengths then only the shortest length will be used
+def vecAdd(tupx, tupy):
+    return tuple(x + y for x,y in zip(tupx, tupy))
+
 #Add sets through their components
 def setAdd(setx, sety):
-    return {x + y for x in setx for y in sety}
+    return {vecAdd(x, y) for x in setx for y in sety}
 
 #Sum a list of sets in the way above
 def setSum(sets):
@@ -73,8 +78,8 @@ class ValueIterator:
                 best.add(val) #Equal to other best elements
             elif all(self.worth(val) > self.worth(elem) for elem in best):
                 best = {val} #Better than previous guess
-        
         return best
+
         
     #Display the resulting policy on the transition structure
     def displayPolicy(self):
