@@ -2,15 +2,38 @@
 
 from collections import defaultdict
 
+#Add sets through their components
+def setAdd(setx, sety):
+    return {x + y for x in setx for y in sety}
+
+#Sum a list of sets in the way above
+def setSum(*sets):
+    # sets: a list of sets
+    if not sets:
+        return {} #Nullary sum
+    else:
+        current = sets[0]
+        for x in sets[1:]:
+            current = setAdd(current, x)
+        return set(current)
+
+#Multiply a tuple by a scalar as if it were a vector
+def vecMult(scalar, tup):
+    return tuple(scalar * x for x in tup)
+
+#Multiply the contents of a set by a scalar
+def setMult(scalar, setx):
+    return {vecMult(scalar,x) for x in setx}
 
 class ValueIterator:
     
     runs = 100 #Number of iterations to use
+    gamma = 1
     
     #Run value iteration on a transition structure
     def __init__(self, ts, rfs, worth):
         #ts : TransitionStructure
-        #rfs : Tuple of reward functions
+        #rfs : Vector valued reward function
         #worth : tuple of reward values -> tuple in ordering
         self.ts = ts
         self.rfs = rfs
@@ -27,16 +50,21 @@ class ValueIterator:
 
     #Update Q[st, act] using value iteration                
     def update(self, st, act):
-        pass
+        #Calculate future reward estimate
+        fut = setSum(setMult(self.ts[(s,a,sp)], 
+                             self.max(Q[(sp,ap)] 
+                                      for ap in self.ts.getActions(sp)))
+                     for sp in self.ts.getStates())
+        Q[(st, act)] = setAdd({self.rfs(st)}, setMult(gamma, fut))
 
     #Find the max of a set of values using the new ordering
     #Returns the set of maximal elements
     def max(self, values):
         best = set([])
         for val in values: #go through comparing each value
-            if all(worth(val) == worth(elem) for elem in best):
+            if all(self.worth(val) == self.worth(elem) for elem in best):
                 best.add(val) #Equal to other best elements
-            elif all(worth(val) > worth(elem) for elem in best):
+            elif all(self.worth(val) > self.worth(elem) for elem in best):
                 best = {val} #Better than previous guess
         
         return best

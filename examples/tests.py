@@ -3,6 +3,7 @@ import random
 import math
 from transitionStructure import *
 from specification import *
+from valueIterator import *
 
 class TransitionStructureTests(unittest.TestCase):
     def testConstructor_Functionality(self):
@@ -154,6 +155,24 @@ class SpecificationTests(unittest.TestCase):
         self.assertEqual(Gt(Number(10.00001),Number(10)).worth(vec), 0)
         self.assertAlmostEqual(Gt(Number(-2),Number(0)).worth(vec), -math.sqrt(2)-.1)
 
+class ValueIteratorTests(unittest.TestCase):
+    def testSetAdd(self):
+        self.assertEqual(setAdd({1,2,3},{1,2,3}), {2,3,4,5,6})
+        self.assertEqual(setAdd({'h'}, {'ello','ow','ope'}), 
+                         {'hello','how','hope'})
+        self.assertEqual(setAdd({5,.6,32,-27.5},{0}), {5,.6,32,-27.5})
+    def testSetSum(self):
+        self.assertEqual(setSum({0},{1}), {1})
+        self.assertEqual(setSum({x} for x in range(10)), {45})
+        self.assertEqual(setSum(set(range(2)) for x in range(5)), 
+                         set(range(6)))
+    def testVecMult(self):
+        self.assertEqual(vecMult(3,(1,2,3)), (3,6,9))
+        self.assertEqual(vecMult(-.5,(4,3,2)), (-2,-1.5,-1))
+        self.assertEqual(vecMult(0,(math.pi, 6.8123,-27)), (0,0,0))
+        
+    
+        
     
 
 if __name__ == '__main__':
