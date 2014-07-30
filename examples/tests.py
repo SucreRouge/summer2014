@@ -162,6 +162,13 @@ class SpecificationTests(unittest.TestCase):
         self.assertEqual(Gt(Number(10),Number(8)).worth(vec), 0)
         self.assertEqual(Gt(Number(10.00001),Number(10)).worth(vec), 0)
         self.assertAlmostEqual(Gt(Number(-2),Number(0)).worth(vec), -math.sqrt(2)-.1)
+    def testLexicographic(self):
+        vec = (0, 1, 2, 3)
+        self.assertEqual(Lexicographic(ID(0),ID(1),ID(2),ID(3)).worth(vec), vec)
+        self.assertEqual(
+            Lexicographic(Number(5), ID(2), Add(Number(3),ID(0))).worth(vec),
+            (5,2,3))
+        self.assertEqual(Lexicographic(Gt(ID(3), Number(0)), Negate(Mult(ID(1), Number(67.2)))).worth(vec), (0, -67.2))
 
 class ValueIteratorTests(unittest.TestCase):
     def testVecAdd(self):

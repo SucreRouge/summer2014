@@ -52,6 +52,10 @@ class ValueIterator:
         #rfs : Vector valued reward function
         #worth : tuple of reward values -> tuple in ordering
         self.ts = ts
+
+#        for state in ts.getStates(): #every state should have an action
+#            assert ts.getActions(state)
+
         self.rfs = rfs
         self.ids = len(rfs(0)) #how many identifiers do we have
         self.worth = worth #evaluate the worth of a tuple
@@ -76,9 +80,6 @@ class ValueIterator:
         
 
         self.Qnext[(st, act)] = setAdd({self.rfs(st)}, setMult(self.gamma, fut))
-        if act == 'sit':
-            print 'sit', self.Qnext[(st, act)]
-            print 'b', self.Qnext[(st, 'b')]
 
 
     #Find the max of a set of values using the new ordering
