@@ -126,49 +126,48 @@ class SpecificationTests(unittest.TestCase):
         self.assertEqual(combineReward(rf1, rf2, rf3, rf4)(0), (3, 0, 0, 2))
         self.assertEqual(combineReward(rf2, rf3, rf1, rf4)(2), (2, 4, 3, 4))
         self.assertEqual(combineReward(rf1)(5), (3,))
-    def testNumber(self):
+    def testNum(self):
         for n in random.sample(range(100), 20):
-            self.assertEqual(Number(n).worth(0), n)
+            self.assertEqual(Num(n)(0), n)
     def testID(self):
         vec = (1,8,-5,3,2,-18,6,7,19)
         for k in range(len(vec)):
-            self.assertEqual(ID(k).worth(vec), vec[k])
+            self.assertEqual(ID(k)(vec), vec[k])
     def testNegate(self):
         vec = (0,0)
         for i in range(-10,30):
-            self.assertEqual(Negate(Number(i)).worth(vec), -i)
-        self.assertEqual(Negate(Number(math.pi)).worth(vec), -math.pi)
-        self.assertEqual(Negate(Number(math.sqrt(2))).worth(vec), -math.sqrt(2))
+            self.assertEqual(Negate(Num(i))(vec), -i)
+        self.assertEqual(Negate(Num(math.pi))(vec), -math.pi)
+        self.assertEqual(Negate(Num(math.sqrt(2)))(vec), -math.sqrt(2))
     def testAdd(self):
         vec = (0,-1,.73,29,-81)
         for k in range(len(vec)):
-            self.assertEqual(Add(ID(k), ID(k)).worth(vec), vec[k] + vec[k])
+            self.assertEqual(Add(ID(k), ID(k))(vec), vec[k] + vec[k])
         for n in random.sample(range(100), 20):
-            self.assertEqual(Add(Number(n),Number(0)).worth(vec), n)
+            self.assertEqual(Add(Num(n),Num(0))(vec), n)
     def testMult(self):
         vec = (0,-1,.73,29,-81)
         for k in range(len(vec)):
-            self.assertEqual(Mult(ID(k), ID(k)).worth(vec), vec[k] * vec[k])
+            self.assertEqual(Mult(ID(k), ID(k))(vec), vec[k] * vec[k])
         for n in random.sample(range(100), 20):
-            self.assertEqual(Mult(Number(n),Number(1)).worth(vec), n)
+            self.assertEqual(Mult(Num(n),Num(1))(vec), n)
     def testGte(self):
         vec = (0, 0)
-        self.assertEqual(Gte(Number(0),Number(0)).worth(vec), 0)
-        self.assertEqual(Gte(Number(10),Number(8)).worth(vec), 0)
-        self.assertAlmostEqual(Gte(Number(-2),Number(0)).worth(vec), -math.sqrt(2))
+        self.assertEqual(Gte(Num(0),Num(0))(vec), 0)
+        self.assertEqual(Gte(Num(10),Num(8))(vec), 0)
+        self.assertAlmostEqual(Gte(Num(-2),Num(0))(vec), -math.sqrt(2))
     def testGt(self):
         vec = (0, 0)
-        self.assertEqual(Gt(Number(0),Number(0)).worth(vec), -.1)
-        self.assertEqual(Gt(Number(10),Number(8)).worth(vec), 0)
-        self.assertEqual(Gt(Number(10.00001),Number(10)).worth(vec), 0)
-        self.assertAlmostEqual(Gt(Number(-2),Number(0)).worth(vec), -math.sqrt(2)-.1)
+        self.assertEqual(Gt(Num(0),Num(0))(vec), -.1)
+        self.assertEqual(Gt(Num(10),Num(8))(vec), 0)
+        self.assertEqual(Gt(Num(10.00001),Num(10))(vec), 0)
+        self.assertAlmostEqual(Gt(Num(-2),Num(0))(vec), -math.sqrt(2)-.1)
     def testLexicographic(self):
         vec = (0, 1, 2, 3)
-        self.assertEqual(Lexicographic(ID(0),ID(1),ID(2),ID(3)).worth(vec), vec)
-        self.assertEqual(
-            Lexicographic(Number(5), ID(2), Add(Number(3),ID(0))).worth(vec),
+        self.assertEqual(Lex(ID(0),ID(1),ID(2),ID(3))(vec), vec)
+        self.assertEqual(Lex(Num(5), ID(2), Add(Num(3),ID(0)))(vec),
             (5,2,3))
-        self.assertEqual(Lexicographic(Gt(ID(3), Number(0)), Negate(Mult(ID(1), Number(67.2)))).worth(vec), (0, -67.2))
+        self.assertEqual(Lex(Gt(ID(3), Num(0)), Negate(Mult(ID(1), Num(67.2))))(vec), (0, -67.2))
 
 class ValueIteratorTests(unittest.TestCase):
     def testVecAdd(self):
@@ -204,7 +203,7 @@ class ValueIteratorTests(unittest.TestCase):
     def testConstructorBasic(self):
         ts0 = TransitionStructure({(0, 'a', 1): 1})
         rfs0 = combineReward(lambda st: st)
-        worth0 = ID(0).worth
+        worth0 = ID(0)
         vi0 = ValueIterator(ts0, rfs0, worth0)
         #(maxing over an empty set)
         self.assertEqual(dict(vi0.Q), {(0,'a'): set([])})
@@ -221,7 +220,7 @@ class ValueIteratorTests(unittest.TestCase):
         rfs2 = combineReward(
             lambda st: 1 if st == 2 else 0,
             lambda st: 1 if st == 2 or st == 1 else 0)
-        worth2 = Gt(ID(0), ID(1)).worth
+        worth2 = Gt(ID(0), ID(1))
         vi2 = ValueIterator(ts2, rfs2, worth2)
         self.assertEqual(dict(vi2.Q), {(0,'a'): {(0,vi2.gamma)},
                                        (0,'b'): {(vi2.gamma,vi2.gamma)},
@@ -237,9 +236,9 @@ class ValueIteratorTests(unittest.TestCase):
         rfs0 = combineReward(
             lambda st: 1 if st == 3 else 0,
             lambda st: 1 if st == 2 or st == 3 else 0)
-        worth0 = Gt(ID(1), ID(0)).worth
-        worth1 = Gte(ID(1), ID(0)).worth
-        worth2 = Add(Gte(ID(0), ID(1)), Gte(ID(1), ID(0))).worth
+        worth0 = Gt(ID(1), ID(0))
+        worth1 = Gte(ID(1), ID(0))
+        worth2 = Add(Gte(ID(0), ID(1)), Gte(ID(1), ID(0)))
         vi0 = ValueIterator(ts0, rfs0, worth0)
         vi1 = ValueIterator(ts0, rfs0, worth1)
         vi2 = ValueIterator(ts0, rfs0, worth2)
