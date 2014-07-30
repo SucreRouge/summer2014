@@ -2,8 +2,13 @@
 import math
 
 #Make a vector valued RF from a list of scalar valued RFs
-def combineReward(*rfs):
-    return lambda st: tuple(rf(st) for rf in rfs)
+class combineReward:
+    def __init__(self, *rfs):
+        self.rfs = rfs
+    def __call__(self, st):
+        return tuple(rf(st) for rf in self.rfs)
+    def __len__(self):
+        return len(self.rfs)
 
 class Specification:
     def __init__(self):
@@ -29,6 +34,8 @@ class Specification:
         return Gt(other, self)
     def __le__(self, other):
         return Gte(other, self)
+    def __or__(self, other):
+        return Add(Gte(other,self), Gte(self, other))
 
 class Lex(Specification):
     #Impose lexicographic ordering on a bunch of specs
@@ -61,6 +68,10 @@ class Negate(Specification):
 class Binop(Specification):
     #Binary operation on specifications
     def __init__(self, left, right):
+        if isinstance(left, (int, long, float)): #More sugar to allow numbers to be used
+            left = Num(left)
+        if isinstance(right, (int, long, float)):
+            right = Num(right)
         self.left = left
         self.right = right
 
