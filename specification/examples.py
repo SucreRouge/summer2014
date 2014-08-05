@@ -18,7 +18,17 @@ def hallwayExample():
         for p in [.2*x + .1 for x in range(5)]:
             print "%8d %8.2f    %s" % (n, p, hallway(n, p, worth).policy('start'))
 
+def hallwaystartExample():
+    G, W, S = ID(0), ID(1), ID(2)
+    worth = Lex((G > 0) -W)
+    hallwaydoublestart(5, .3, worth).displayPolicy()
+
+def gridExample():
+    X, Y = ID(0), ID(1)
+    worth = Lex(X, Y, X | Y)
+    tgrid(worth).displayPolicy()
+    
 
 
 if __name__ == '__main__':
-    hallwayExample()
+    gridExample()

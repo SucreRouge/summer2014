@@ -57,11 +57,10 @@ class ValueIterator:
 #            assert ts.getActions(state)
 
         self.rfs = rfs
-        self.ids = len(rfs(0)) #how many identifiers do we have
         self.worth = worth #evaluate the worth of a tuple
         
         #Q : dict<(state, action), (val, val, ...)>
-        self.Q = defaultdict(lambda: {(0,) * self.ids})
+        self.Q = defaultdict(lambda: {(0,) * len(self.rfs)})
 
         for run in range(self.runs):
             self.Qnext = copy.deepcopy(self.Q)
@@ -112,7 +111,7 @@ class ValueIterator:
                 else:
                     label = str(action)
                 color = "purple" if action in self.policy(start) else "black"
-                edge = pydot.Edge(start, dest, label=label, color=color)
+                edge = pydot.Edge(str(start), str(dest), label=label, color=color)
                 graph.add_edge(edge)
         #Display the graph to the screen
         png_str = graph.create_png(prog='neato')

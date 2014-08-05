@@ -32,6 +32,34 @@ def hallway(n, p, worth):
     vi = ValueIterator(ts, rfs, worth)
     return vi
 
+def hallwaydoublestart(n, p, worth):
+    #n: length of hallway in the safe direction
+    #p: probability of hitting wall even in safe direction
+    
+    #Set up the transition structure
+    ts = TransitionStructure()
+    ts.addAction('start','sit',{'start2': 1})
+    ts.addAction('start2', 'sit', {'start': 1})
+    ts.addAction('start','a',{'wall': 1})
+    ts.addAction('wall','a',{'goal': 1})
+    ts.addAction('goal','a',{'done': 1})
+    ts.addAction('done','a',{'done': 1})
+    ts.addAction('start','b',{0: 1})
+    ts.addAction(0, 'a', {'wall': p, 1: 1-p})
+    ts.addAction(n, 'a', {'goal': 1})
+    for k in range(1, n):
+        ts.addAction(k, 'a', {k+1: 1})
+    
+    #And the reward function
+    G = lambda st: 1 if st == 'goal' else 0
+    W = lambda st: 1 if st == 'wall' else 0
+    S = lambda st: 1 if st == 'start' else 0
+    rfs = combineReward(G, W, S)
+    
+    vi = ValueIterator(ts, rfs, worth)
+    return vi
+
+
 
 #### TWO WAY LITTMAN's HALLWAY ####
 def twohallway(n, p, worth):
@@ -81,3 +109,36 @@ def ratioChoice(worth):
     B = lambda st: 1 if st.endswith('B') else 0
     rfs = combineReward(A, B)
     return ValueIterator(ts, rfs, worth)
+
+
+#### TEMPERATURE GRID ####
+def tgrid(worth):
+    ts = TransitionStructure()
+    w, h = 5, 5 # width and height of grid
+    p = .8 #successful action prob
+    q = (1-p)/2
+    for i in range(w):
+        for j in range(h):
+            u = 0 if j == 0 else 1
+            d = 0 if j == h - 1 else 1
+            l = 0 if i == 0 else 1
+            r = 0 if i == w - 1 else 1
+            here = (i, j)
+            up = (i, j-1)
+            down = (i, j+1)
+            left = (i-1, j)
+            right = (i+1, j)
+            ts.addAction(here, 'r', {right: p*r, up: q*u, down: q*d,
+                                     here: 1-(p*r + q*u + q*d)})
+            ts.addAction(here, 'l', {left: p*l, up: q*u, down: q*d,
+                                     here: 1-(p*l + q*u + q*d)})
+            ts.addAction(here, 'u', {up: p*u, left: q*l, right: q*r,
+                                     here: 1-(p*u + q*l + q*r)})
+            ts.addAction(here, 'd', {down: p*d, left: q*l, right: q*r,
+                                     here: 1-(p*d + q*l + q*r)})
+
+    X = lambda st: st[0]
+    Y = lambda st: st[1]
+    rfs = combineReward(X, Y)
+    return ValueIterator(ts, rfs, worth)
+    
