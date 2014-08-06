@@ -8,6 +8,11 @@ def ratioExample():
     worth = A | B
     ratioChoice(worth).displayPolicy()
 
+def ratioSitExample():
+    A, B = ID(0), ID(1)
+    worth = (A | B) + (A > 0) + (B > 0)
+    ratioChoiceSit(worth).displayPolicy()
+
 #Littman's Hallway with limit problem
 def hallwayExample():
     G, W, S = ID(0), ID(1), ID(2)
@@ -25,10 +30,13 @@ def hallwaystartExample():
 
 def gridExample():
     X, Y = ID(0), ID(1)
-    worth = Lex(X, Y, X | Y)
-    tgrid(worth).displayPolicy()
+    worth = Lex(X, Y)
+    vi = tgrid(5,5,.8,worth)
+    vi.displayPolicy()
+    print vi.policy((0, 1))
+    
     
 
 
 if __name__ == '__main__':
-    gridExample()
+    ratioSitExample()

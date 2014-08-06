@@ -36,9 +36,11 @@ def setMult(scalar, setx):
 
 #Union a list of sets
 def union(sets):
+    assert sets
     current = set([])
     for x in sets:
         current = current | x
+
     return current
 
 class ValueIterator:
@@ -77,7 +79,6 @@ class ValueIterator:
                                             for ap in self.ts.getActions(sp))))
                       for sp in self.ts.getStates()])
         
-
         self.Qnext[(st, act)] = setAdd({self.rfs(st)}, setMult(self.gamma, fut))
 
 

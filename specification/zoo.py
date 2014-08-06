@@ -93,7 +93,7 @@ def twohallway(n, p, worth):
     vi = ValueIterator(ts, rfs, worth)
     return vi
 
-#### CHOICE OF RATIOS ####
+#### CHOICE OF RATIOS ###
 def ratioChoice(worth):
     ts = TransitionStructure({
         ('start','x','x0A'): 1, ('start','y','y0A'): 1, ('start','z','z0A'): 1,
@@ -110,12 +110,28 @@ def ratioChoice(worth):
     rfs = combineReward(A, B)
     return ValueIterator(ts, rfs, worth)
 
+def ratioChoiceSit(worth):
+    ts = TransitionStructure({
+        ('start', 'sit', 'start'): 1,
+        ('start','x','x0A'): 1, ('start','y','y0A'): 1, ('start','z','z0A'): 1,
+        ('x0A', 'x', 'x1B'): 1, ('y0A','y','y1B'): 1, ('z0A','z','z1B'): 1,
+        ('x1B', 'x', 'x2' ): 1, ('y1B','y','y2B'): 1, ('z1B','z','z2A'): 1,
+        ('x2' , 'x', 'x3' ): 1, ('y2B','y','y3B'): 1, ('z2A','z','z3A'): 1,
+        ('x3' , 'x', 'x4A'): 1, ('y3B','y','y4A'): 1, ('z3A','z','z4A'): 1,
+        ('x4A', 'x', 'x5B'): 1, ('y4A','y','y5B'): 1, ('z4A','z','z5B'): 1,
+        ('x5B', 'x', 'end'): 1, ('y5B','y','end'): 1, ('z5B','z','end'): 1,
+        ('end', 'sit', 'end'): 1
+    })
+    A = lambda st: 1 if st.endswith('A') else 0
+    B = lambda st: 1 if st.endswith('B') else 0
+    rfs = combineReward(A, B)
+    return ValueIterator(ts, rfs, worth)
+
 
 #### TEMPERATURE GRID ####
-def tgrid(worth):
+def tgrid(w, h, p, worth):
+    #w: width, h: height, p: transition prob
     ts = TransitionStructure()
-    w, h = 5, 5 # width and height of grid
-    p = .8 #successful action prob
     q = (1-p)/2
     for i in range(w):
         for j in range(h):

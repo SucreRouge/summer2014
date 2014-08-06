@@ -23,6 +23,7 @@ class TransitionStructure(defaultdict):
     #Add a transition to the structure
     def addAction(self, state, action, results):
         #results : dict<state, prob>
+        results = {key: val for (key, val) in results.items() if val}
         for (sprime, prob) in results.items():
             self[(state, action, sprime)] = prob
 
