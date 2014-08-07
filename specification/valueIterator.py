@@ -71,6 +71,15 @@ class ValueIterator:
                     self.update(st,act)
             self.Q = self.Qnext
 
+        #Finally truncate if applicable
+        if self.worth.truncate:
+            for key, val in self.Q.items():
+                self.Q[key] = self.truncate(val)
+
+    # Truncate a value
+    def truncate(self, vals):
+        return {tuple(round(component, 3) for component in vec) for vec in vals}         #TODO what about float imprecision?
+
     #Update Q[st, act] using value iteration                
     def update(self, st, act):
         #Calculate future reward estimate
@@ -95,13 +104,12 @@ class ValueIterator:
         
     #Return the set of maximal actions from a state
     def policy(self, st):
-        best = self.max(union(self.Q[(st, act)] # the maximal values
+        best = self.max(union(self.Q[(st, act)] #maximal vals
                               for act in self.ts.getActions(st)))
         #Inefficiently find the corresponding actions
         return {act for act in self.ts.getActions(st)
                 if self.Q[(st, act)] & best}
 
-        
     #Display the resulting policy on the transition structure
     def displayPolicy(self):
         graph = pydot.Dot(graph_type='digraph')

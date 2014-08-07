@@ -11,6 +11,7 @@ class combineReward:
         return len(self.rfs)
 
 class Specification:
+    truncate = False
     def __init__(self):
         pass
     #Evaluate a vector to produce a value in the ordering
@@ -36,6 +37,14 @@ class Specification:
         return Gte(other, self)
     def __or__(self, other):
         return Add(Gte(other,self), Gte(self, other))
+
+class Trunc(Specification):
+    #Truncate the results before we calculate the policy
+    def __init__(self, spec):
+        self.spec = spec
+        self.truncate = True
+    def __call__(self, vec):
+        return self.spec(vec)
 
 class Lex(Specification):
     #Impose lexicographic ordering on a bunch of specs

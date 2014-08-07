@@ -25,8 +25,10 @@ def hallwayExample():
 
 def hallwaystartExample():
     G, W, S = ID(0), ID(1), ID(2)
-    worth = Lex((G > 0) -W)
-    hallwaydoublestart(5, .3, worth).displayPolicy()
+    worth = Trunc(Lex((G > 0), -W))
+    vi = hallwaydoublestart(5, .3, worth)
+    vi.displayPolicy()
+    
 
 def gridExample():
     X, Y = ID(0), ID(1)
@@ -39,4 +41,4 @@ def gridExample():
 
 
 if __name__ == '__main__':
-    ratioSitExample()
+    hallwaystartExample()
